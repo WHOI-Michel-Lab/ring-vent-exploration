@@ -95,7 +95,7 @@ def aggregate_data(data_dir, file_day):
 
 
 
-def get_csv_and_navest(data_dir = DATA_DIR):
+def get_csv_and_navest(data_dir = DATA_DIR, clean_up = True):
     days = get_file_names()
     # We only take the files after the first because not
     # all datastreams seem to have been recording for that 
@@ -103,15 +103,6 @@ def get_csv_and_navest(data_dir = DATA_DIR):
     dfs = [aggregate_data(DATA_DIR, day) for day in days[1:]]
     combined = pd.concat(dfs, ignore_index=True)
 
-    # combined.drop([
-    #     'X local(m)', 'Y local(m)', 'X UTM(m)', 'Y UTM(m)', 'UTMZone', 'depth(m)',
-    #     'altitude(m)', 'octans heading(deg)', 'octans pitch(deg)',
-    #     'octans roll(deg)', 'crossbow heading(deg)', 'crossbow pitch(deg)',
-    #     'crossbow roll(deg)', 'maggie x', 'maggie y', 'maggie z',
-    #     'maggie total', 'conductivity_x',  'temperature(deg C)', 'depth(m)_2',
-    #     'salinity_x', 'sound velocity', 'pressure_x', 'lss gain', 'lss backscatter', 'None',
-    #     'unix_time_x', 'date_x', 'date_y'
-    # ], axis=1, inplace=True)
 
 
     # Getting the renav data:
@@ -128,7 +119,27 @@ def get_csv_and_navest(data_dir = DATA_DIR):
         axis=1
     ).tolist()
 
-    return pd.merge_asof(combined, renav_data, left_on='unix_time_x', right_on='unix_time')
+    full_df = pd.merge_asof(combined, renav_data, left_on='unix_time_x', right_on='unix_time')
+
+    if clean_up:
+        full_df.drop([
+            'X local(m)', 'Y local(m)', 'X UTM(m)', 'Y UTM(m)', 'UTMZone', 'depth(m)',
+            'altitude(m)', 'octans heading(deg)', 'octans pitch(deg)',
+            'octans roll(deg)', 'crossbow heading(deg)', 'crossbow pitch(deg)',
+            'crossbow roll(deg)', 'maggie x', 'maggie y', 'maggie z',
+            'maggie total', 'conductivity_x',  'temperature(deg C)', 'depth(m)_2',
+            'salinity_x', 'sound velocity', 'pressure_x', 'lss gain', 'lss backscatter', 'None',
+            'unix_time_x', 'date_x', 'date_y'
+        ], axis=1, inplace=True)
+
+        full_data = full_data.astype({
+            col:'float'
+            for col 
+            in ['temperature', 'salinity_y', 'conductivity_y', 'pressure_y', 'obs_proj', 'oxygen_proj', 'depth']
+        })
+
+
+    return full_df
 
 
 
