@@ -79,15 +79,6 @@ def aggregate_data(data_dir, file_day):
     combined_data['oxygen_proj'] = interp_oos(combined_data['time(seconds since Jan 1 1970)'])
 
 
-    # We will add a useful preprocessing step, by 
-    # converting latlon into utm coords
-    combined_data[['northing', 'easting']] = combined_data.apply(
-        lambda row: utm.from_latlon(
-            row['latitude(deg)'], 
-            row['longitude(deg)']
-        )[:2], 
-        axis=1
-    ).tolist()
 
     combined_data['source'] = file_day
 
@@ -132,11 +123,26 @@ def get_csv_and_navest(data_dir = DATA_DIR, clean_up = True):
             'unix_time_x', 'date_x', 'date_y'
         ], axis=1, inplace=True)
 
-        full_data = full_data.astype({
+        full_df = full_df.astype({
             col:'float'
             for col 
-            in ['temperature', 'salinity_y', 'conductivity_y', 'pressure_y', 'obs_proj', 'oxygen_proj', 'depth']
+            in [
+                'temperature', 'salinity_y', 'conductivity_y', 
+                'pressure_y', 'obs_proj', 'oxygen_proj', 'depth',
+                'lat', 'lon']
+
         })
+
+
+        # We will add a useful preprocessing step, by 
+        # converting latlon into utm coords
+        full_df[['northing', 'easting']] = full_df.apply(
+            lambda row: utm.from_latlon(
+                row['lat'], 
+                row['lon']
+            )[:2], 
+            axis=1
+        ).tolist()
 
 
     return full_df
