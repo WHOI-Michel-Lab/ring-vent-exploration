@@ -124,7 +124,7 @@ def get_csv_and_navest(data_dir = DATA_DIR, clean_up = True):
         ], axis=1, inplace=True)
 
         full_df = full_df.astype({
-            col:'float'
+           col:'float'
             for col 
             in [
                 'temperature', 'salinity_y', 'conductivity_y', 
@@ -148,7 +148,41 @@ def get_csv_and_navest(data_dir = DATA_DIR, clean_up = True):
     return full_df
 
 
+def get_mass_spec(dir):
+    files = os.listdir(dir)
+    files.sort()
+
+    split_data = [pd.read_csv(f"../data/J2-1393/mass_spec/{filename}", header=None) for filename in files]
+
+    # The headers are stored as the first column of every file
+    # With a placeholder 0.0 at the top. So we are taking 
+    # Everything but the 0 in the first column of the first file
+    header = ['time'] + split_data[0][0][1:].tolist()
+
+    transposed_data = []
+    for data in split_data:
+        data = data.drop(columns=[0])
+        data = data.transpose()
+        data.columns = header
+        transposed_data.append(data)
+
+    return pd.concat(transposed_data, ignore_index=True)
+
+import argparse
+
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_dir', required=True, type=str, help="Directory with J2-1393 sensor data")
+    parser.add_argument('--output_file', required=True, type=str, help="Where to save resulting csv")
+
+
+    return parser.parse_args()
+
 
 
 if __name__ == '__main__':
-    pass
+    args = get_args()
+
+    data = get_csv_and_navest(args.data_dir)
+    data.to_csv(args.output_file)
+
