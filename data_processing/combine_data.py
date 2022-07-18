@@ -156,7 +156,7 @@ def get_mass_spec(dir):
     files = os.listdir(dir)
     files.sort()
 
-    split_data = [pd.read_csv(os.path.join((dir, filename)), header=None) for filename in files]
+    split_data = [pd.read_csv(os.path.join(dir, filename), header=None) for filename in files]
 
     # The headers are stored as the first column of every file
     # With a placeholder 0.0 at the top. So we are taking 

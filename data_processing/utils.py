@@ -3,6 +3,7 @@ import utm
 import plotly.express as px
 import plotly.graph_objects as go
 import datetime
+from bisect import bisect_left
 
 MESH_PATH = "../data/ring_depth.csv"
 
@@ -119,8 +120,6 @@ def date_time_to_unix(date_str, time):
     return time_for_day + time_of_day.total_seconds()
     
 
-def latlon_to_utm(df, lat_col='lat', lon='lon'):
-    """This function takes in a 
-    pandas df and adds a northing 
-    and easting column.
-    """
+def get_row_by_value(data, column, value):
+    index = bisect_left(data[column], value)
+    return data.iloc[index]
