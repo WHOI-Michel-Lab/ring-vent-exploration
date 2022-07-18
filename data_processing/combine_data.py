@@ -3,19 +3,23 @@ import utils
 import pandas as pd
 import utm
 import os
+import argparse
 
 # This can be changeable for whatever 
-DATA_DIR = "../data/J2-1393"
+# DATA_DIR = "../data/J2-1393"
 
 extensions = ['csv', 'ct2', 'oos', 'obs']
 
-def get_file_names(data_dir = DATA_DIR):
+def get_file_names(data_dir):
     # Each "file format" has these days. I want the prefix 
     # that works for each, in order, without the suffix, so I can
     # collect the corresponding set from each group and then merge later
     files = os.listdir(f"{data_dir}/csv")
     files.sort()
-    return [filepath.split('.')[0] for filepath in files]
+
+    # There are some datafiles that begin ._<date> that seem to not be openable
+    # This prevents them from messing up the processing
+    return [filepath.split('.')[0] for filepath in files if not filepath.startswith('.')]
 
 def aggregate_data(data_dir, file_day):
     file_paths = {
@@ -86,12 +90,12 @@ def aggregate_data(data_dir, file_day):
 
 
 
-def get_csv_and_navest(data_dir = DATA_DIR, clean_up = True):
-    days = get_file_names()
+def get_csv_and_navest(data_dir , clean_up = True):
+    days = get_file_names(data_dir)
     # We only take the files after the first because not
     # all datastreams seem to have been recording for that 
     # first day.
-    dfs = [aggregate_data(DATA_DIR, day) for day in days[1:]]
+    dfs = [aggregate_data(data_dir, day) for day in days[1:]]
     combined = pd.concat(dfs, ignore_index=True)
 
 
@@ -152,7 +156,7 @@ def get_mass_spec(dir):
     files = os.listdir(dir)
     files.sort()
 
-    split_data = [pd.read_csv(f"../data/J2-1393/mass_spec/{filename}", header=None) for filename in files]
+    split_data = [pd.read_csv(os.path.join((dir, filename)), header=None) for filename in files]
 
     # The headers are stored as the first column of every file
     # With a placeholder 0.0 at the top. So we are taking 
@@ -168,8 +172,6 @@ def get_mass_spec(dir):
 
     return pd.concat(transposed_data, ignore_index=True)
 
-import argparse
-
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', required=True, type=str, help="Directory with J2-1393 sensor data")
@@ -184,5 +186,5 @@ if __name__ == '__main__':
     args = get_args()
 
     data = get_csv_and_navest(args.data_dir)
-    data.to_csv(args.output_file)
+    data.to_csv(args.output_file, index=False)
 
