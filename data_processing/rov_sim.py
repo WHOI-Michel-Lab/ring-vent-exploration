@@ -104,11 +104,9 @@ class CaptureHolder():
 
 
 
-def run_server(fig, near_vent, start_end_by_file, cap):
+def run_server(fig, timeline, near_vent, start_end_by_file, cap):
 
     columns_of_interest = near_vent.columns
-        
-        
 
     app = Dash(__name__)
 
@@ -144,13 +142,12 @@ def run_server(fig, near_vent, start_end_by_file, cap):
         
         html.Div(children = [
             dcc.Graph(id = 'spatial', figure=fig),
-            html.Div(children = [
-                'Unix Time: ',
-                dcc.Input(value=0, id='frame_selector', style={'margin': 'auto'}), 
-
-            ])
-
-        ], )
+            dcc.Graph(id='timeline', figure=timeline)
+        ], style = styles['display_wrapper']),
+        html.Div(children = [
+            'Unix Time: ',
+            dcc.Input(value=0, id='frame_selector', style={'margin': 'auto'}), 
+        ]),
         
 
         
@@ -159,7 +156,8 @@ def run_server(fig, near_vent, start_end_by_file, cap):
     # SCRIPTING
     @app.callback(
         Output(component_id = 'camera', component_property='figure'),
-        Input('spatial', 'clickData')
+        # Input('spatial', 'clickData')
+        Input('timeline', 'clickData')
     )
     def set_camera(node_clicked):
         custom_data = node_clicked['points'][0]['customdata']
@@ -175,7 +173,8 @@ def run_server(fig, near_vent, start_end_by_file, cap):
 
     @app.callback(
         Output(component_id = 'frame_selector', component_property='value'),
-        Input('spatial', 'clickData')
+        # Input('spatial', 'clickData')
+        Input('timeline', 'clickData')
     )
     def set_frame(node_clicked):
         print(node_clicked)
@@ -185,7 +184,8 @@ def run_server(fig, near_vent, start_end_by_file, cap):
 
     @app.callback(
         Output(component_id = 'sensor_display', component_property='children'),
-        Input('spatial', 'clickData')
+        # Input('spatial', 'clickData')
+        Input('timeline', 'clickData')
     )
     def set_sensor_readout(node_clicked):
         node_index = node_clicked['points'][0]['customdata']
@@ -264,4 +264,24 @@ if __name__ == '__main__':
     PLOT_MESH = True
     fig = go.Figure(data = ([mesh, scatterplot] if PLOT_MESH else [scatterplot]))
 
-    run_server(fig, near_vent, start_end_by_file, cap)
+    timeline_plot = go.Scatter(
+        x=near_vent.unix_time,
+        y=[0]*len(near_vent),
+        text = near_vent.unix_time,
+        mode="markers",
+        marker=dict(
+            color=near_vent.rgb,
+        ),
+        customdata=near_vent.index
+    )
+    timeline = go.Figure(data = [timeline_plot])
+
+    # timeline = px.scatter(
+    #     near_vent, 
+    #     x="unix_time", 
+    #     y = [0]*len(near_vent), 
+    #     color = "rgb",
+    #     color_discrete_map="identity"
+    # )
+
+    run_server(fig, timeline, near_vent, start_end_by_file, cap)
