@@ -61,50 +61,6 @@ def time_to_file(time, start_end_by_file, return_int=False):
     return None
 
 
-class CaptureHolder():
-    def __init__(self, video_dir):
-        self.cap = None
-        self.file = None
-        self.seconds = None
-        self.video_dir = video_dir
-        
-    def set_file(self, file):
-        if file == self.file:
-            return
-        else:
-            self.file = file
-            self.cap = cv2.VideoCapture(os.path.join(self.video_dir, file))
-            
-    def seek(self, seconds):
-        self.seconds = seconds
-        self.cap.set(cv2.CAP_PROP_POS_MSEC, seconds*1000)
-        
-    def fast_forward(self):
-        self.seek(self.seconds + 5)
-
-    def rewind(self):
-        self.seek(self.seconds - 5)
-
-
-    def get_image(self, file, seconds):
-        # gives a plotly figure of the specified image
-        self.set_file(os.path.join(self.video_dir, file))
-
-        self.seek(seconds)
-
-        ret, frame = self.cap.read()
-        
-        if not ret:
-            raise ValueError("Image not found")
-        
-        
-    #     CV2 seems to default to ordering the channels unusually
-    #     This orders them as rgb so that plotly understands it
-        return px.imshow(cv2.merge(cv2.split(frame)[::-1]))
-
-
-
-
 def run_server(fig, timeline, near_vent, mass_spec):
 
     app = Dash(__name__)
@@ -144,7 +100,7 @@ def run_server(fig, timeline, near_vent, mass_spec):
         
 
         
-    ], style={})#'display':'flex', 'flex-direction':'row'})
+    ], style={})
         
     # SCRIPTING
     @app.callback(
@@ -162,7 +118,6 @@ def run_server(fig, timeline, near_vent, mass_spec):
         time_diff = abs(timestamp - row_time)
 
         return px.line( x = row.index[1:], y = row[1:].tolist(), )
-            # title=f"Mass Spec at {row_time}, difference from click {time_diff}"
         
         
     @app.callback(
@@ -200,6 +155,13 @@ def get_args():
         type=str,
         help="The directory storing mass spectrometry csv files."
     )
+    parser.add_argument(
+        '--subsample_factor',
+        type=int,
+        default=1,
+        help="The factor by which to subsample data. (E.g. if factor is 5, 1/5 of points are taken)"
+
+    )
 
     args = parser.parse_args()
     return args
@@ -223,15 +185,16 @@ if __name__ == '__main__':
     # TODO: This is specific to ring vent
     near_vent = data.loc[(data.depth < -1700), :]
     colors = ['rgba(0, 0, 0, .001)', *px.colors.DEFAULT_PLOTLY_COLORS]
-    # TODO: This isn't robust to a larger number of input files, need a larger color array
-    # near_vent['rgb'] = near_vent.color.apply(lambda i: colors[int(i)] if pd.notna(i) else colors[0])
-    near_vent['rgb'] = near_vent.unix_time #['rgb(0, 0, 0)'] * len(near_vent)
+    near_vent['rgb'] = near_vent.unix_time
+
+    near_vent = near_vent[near_vent.index % args.subsample_factor == 0]
+
     
     scatterplot = go.Scatter3d(
         x=near_vent.northing,
         y=near_vent.easting,
         z=near_vent.depth,
-        text = near_vent.unix_time,#data[pd.notna(data.video_file)].text,
+        text = near_vent.unix_time,
         mode='markers',
         marker=dict(
             color=near_vent.rgb,
@@ -245,7 +208,7 @@ if __name__ == '__main__':
     timeline_plot = go.Scatter(
         x=near_vent.unix_time,
         y=[0]*len(near_vent),
-        text = near_vent.unix_time,#data[pd.notna(data.video_file)].text,
+        text = near_vent.unix_time,
         mode='markers',
         marker=dict(
             color=near_vent.rgb,
