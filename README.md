@@ -21,6 +21,8 @@ data_processing/combine_data.py
 
 data_processing/rov_sim.py
 - Use to visualize the sensor readouts in space with video (when captured)
+- Example command line:
+`python rov_sim.py --data_file ../data/test_data/csv_and_navest.csv --video_dir /Volumes/LaCie/video --mesh_file ../data/ring_depth.csv`
 
 data_processing/visualize_mass_spec.py
 - Use to look at the mass spectrometry density at a given time. 

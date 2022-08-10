@@ -22,6 +22,10 @@ import utils
 
 
 def get_frames(video_dir):
+    """
+    Given a directory of videos,
+    this function will calculate the unix start and end time 
+    of each, and return a map from filename to the start and end times."""
 
     start_end_by_file = {}
 
@@ -61,6 +65,10 @@ def time_to_file(time, start_end_by_file, return_int=False):
 
 
 class CaptureHolder():
+    """
+    This class is designed to aid in retrieving frames from a directory of videos 
+    without opening and closing files more than necessary.
+    """
     def __init__(self, video_dir):
         self.cap = None
         self.file = None
@@ -117,9 +125,7 @@ def run_server(fig, timeline, near_vent, start_end_by_file, cap):
             'overflowX': 'scroll',
             'overflowY': 'scroll',
             "height": "450px",
-    #         "margin": "auto",
             "margin-top": "15px",
-    #         'height': '450px'
         },
         'display_wrapper': {
             'display': 'flex',
@@ -151,12 +157,11 @@ def run_server(fig, timeline, near_vent, start_end_by_file, cap):
         
 
         
-    ], style={})#'display':'flex', 'flex-direction':'row'})
+    ], style={})
         
     # SCRIPTING
     @app.callback(
         Output(component_id = 'camera', component_property='figure'),
-        # Input('spatial', 'clickData')
         Input('timeline', 'clickData')
     )
     def set_camera(node_clicked):
@@ -167,13 +172,8 @@ def run_server(fig, timeline, near_vent, start_end_by_file, cap):
         return cap.get_image(data.iloc[custom_data]['video_file'], seek_dist)
         
         
-    #     return px.imshow(im_by_time[timestamp])
-    #     return px.imshow(video_extraction.decompress_image(im_by_time[timestamp]))
-
-
     @app.callback(
         Output(component_id = 'frame_selector', component_property='value'),
-        # Input('spatial', 'clickData')
         Input('timeline', 'clickData')
     )
     def set_frame(node_clicked):
@@ -184,7 +184,6 @@ def run_server(fig, timeline, near_vent, start_end_by_file, cap):
 
     @app.callback(
         Output(component_id = 'sensor_display', component_property='children'),
-        # Input('spatial', 'clickData')
         Input('timeline', 'clickData')
     )
     def set_sensor_readout(node_clicked):
@@ -199,6 +198,15 @@ def run_server(fig, timeline, near_vent, start_end_by_file, cap):
 
 
 def get_args():
+    """
+    Parsing for commandline args. 
+
+    Example command (may change depending on repository structure): 
+        python rov_sim.py --data_file ../data/test_data/csv_and_navest.csv \
+            --video_dir /Volumes/LaCie/video \
+            --mesh_file ../data/ring_depth.csv
+    
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--data_file", 
@@ -275,13 +283,5 @@ if __name__ == '__main__':
         customdata=near_vent.index
     )
     timeline = go.Figure(data = [timeline_plot])
-
-    # timeline = px.scatter(
-    #     near_vent, 
-    #     x="unix_time", 
-    #     y = [0]*len(near_vent), 
-    #     color = "rgb",
-    #     color_discrete_map="identity"
-    # )
 
     run_server(fig, timeline, near_vent, start_end_by_file, cap)
