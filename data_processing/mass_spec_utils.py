@@ -15,6 +15,9 @@ def scott_time_to_unix(scott_time):
     return scott_time * 24*60*60 - 62167287600.0
 
 def get_long_data(data_dir):
+    """get_long_data parses the mass spec data into 
+    a 'long' format, where the columns are time, mass_spec, and mass.
+    In other words, each row is a reading of a particular mass at a particular time"""
     files = os.listdir(data_dir)
     files.sort()
 
@@ -36,6 +39,10 @@ def get_long_data(data_dir):
     return long_data
 
 def get_wide_data(data_dir):
+    """get_wide_data parses mass spec data into 
+    a wide format. There are columns for time, and each of the masses 
+    measured by the mass spectrometry. Each row is a reading across all 
+    masses at a specific time."""
     files = os.listdir(data_dir)
     files.sort()
 
@@ -60,6 +67,9 @@ def get_wide_data(data_dir):
 
 
 def get_args():
+    """Basic argument parsing.
+    for example:
+        python mass_spec_utils.py --data_dir ../data/J2-1393 --time 0"""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--data_dir', 
