@@ -22,6 +22,10 @@ import utils
 
 
 def get_frames(video_dir):
+    """
+    Given a directory of videos,
+    this function will calculate the unix start and end time 
+    of each, and return a map from filename to the start and end times."""
 
     start_end_by_file = {}
 
@@ -61,6 +65,10 @@ def time_to_file(time, start_end_by_file, return_int=False):
 
 
 class CaptureHolder():
+    """
+    This class is designed to aid in retrieving frames from a directory of videos 
+    without opening and closing files more than necessary.
+    """
     def __init__(self, video_dir):
         self.cap = None
         self.file = None
@@ -104,11 +112,9 @@ class CaptureHolder():
 
 
 
-def run_server(fig, near_vent, start_end_by_file, cap):
+def run_server(fig, timeline, near_vent, start_end_by_file, cap):
 
     columns_of_interest = near_vent.columns
-        
-        
 
     app = Dash(__name__)
 
@@ -119,9 +125,7 @@ def run_server(fig, near_vent, start_end_by_file, cap):
             'overflowX': 'scroll',
             'overflowY': 'scroll',
             "height": "450px",
-    #         "margin": "auto",
             "margin-top": "15px",
-    #         'height': '450px'
         },
         'display_wrapper': {
             'display': 'flex',
@@ -144,22 +148,21 @@ def run_server(fig, near_vent, start_end_by_file, cap):
         
         html.Div(children = [
             dcc.Graph(id = 'spatial', figure=fig),
-            html.Div(children = [
-                'Unix Time: ',
-                dcc.Input(value=0, id='frame_selector', style={'margin': 'auto'}), 
-
-            ])
-
-        ], )
+            dcc.Graph(id='timeline', figure=timeline)
+        ], style = styles['display_wrapper']),
+        html.Div(children = [
+            'Unix Time: ',
+            dcc.Input(value=0, id='frame_selector', style={'margin': 'auto'}), 
+        ]),
         
 
         
-    ], style={})#'display':'flex', 'flex-direction':'row'})
+    ], style={})
         
     # SCRIPTING
     @app.callback(
         Output(component_id = 'camera', component_property='figure'),
-        Input('spatial', 'clickData')
+        Input('timeline', 'clickData')
     )
     def set_camera(node_clicked):
         custom_data = node_clicked['points'][0]['customdata']
@@ -169,13 +172,9 @@ def run_server(fig, near_vent, start_end_by_file, cap):
         return cap.get_image(data.iloc[custom_data]['video_file'], seek_dist)
         
         
-    #     return px.imshow(im_by_time[timestamp])
-    #     return px.imshow(video_extraction.decompress_image(im_by_time[timestamp]))
-
-
     @app.callback(
         Output(component_id = 'frame_selector', component_property='value'),
-        Input('spatial', 'clickData')
+        Input('timeline', 'clickData')
     )
     def set_frame(node_clicked):
         print(node_clicked)
@@ -185,7 +184,7 @@ def run_server(fig, near_vent, start_end_by_file, cap):
 
     @app.callback(
         Output(component_id = 'sensor_display', component_property='children'),
-        Input('spatial', 'clickData')
+        Input('timeline', 'clickData')
     )
     def set_sensor_readout(node_clicked):
         node_index = node_clicked['points'][0]['customdata']
@@ -199,6 +198,15 @@ def run_server(fig, near_vent, start_end_by_file, cap):
 
 
 def get_args():
+    """
+    Parsing for commandline args. 
+
+    Example command (may change depending on repository structure): 
+        python rov_sim.py --data_file ../data/test_data/csv_and_navest.csv \
+            --video_dir /Volumes/LaCie/video \
+            --mesh_file ../data/ring_depth.csv
+    
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--data_file", 
@@ -264,4 +272,16 @@ if __name__ == '__main__':
     PLOT_MESH = True
     fig = go.Figure(data = ([mesh, scatterplot] if PLOT_MESH else [scatterplot]))
 
-    run_server(fig, near_vent, start_end_by_file, cap)
+    timeline_plot = go.Scatter(
+        x=near_vent.unix_time,
+        y=[0]*len(near_vent),
+        text = near_vent.unix_time,
+        mode="markers",
+        marker=dict(
+            color=near_vent.rgb,
+        ),
+        customdata=near_vent.index
+    )
+    timeline = go.Figure(data = [timeline_plot])
+
+    run_server(fig, timeline, near_vent, start_end_by_file, cap)
