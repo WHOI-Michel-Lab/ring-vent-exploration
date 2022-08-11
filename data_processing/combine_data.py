@@ -172,9 +172,31 @@ def get_mass_spec(dir):
 
     return pd.concat(transposed_data, ignore_index=True)
 
+
+def get_methane_data(path, drop_duplicate=True):
+    """
+    Expects a path to a methane data csv with timestamp, 
+    fundamental, ringdown, and methane columns
+    
+    There seems to be many duplicate rows with not even slight variation. 
+    We will drop duplicates by time, by default, drop_duplicate=False to disable
+    
+    """
+    data = pd.read_csv(path)
+    data['unix_time'] = data.timestamp.str.split(' ').apply(lambda x: utils.date_time_to_unix(x[0], x[1]))
+
+    if drop_duplicate:
+        data = data.drop_duplicates('unix_time')
+
+    return data
+
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', required=True, type=str, help="Directory with J2-1393 sensor data")
+    parser.add_argument('--methane_path', required=True, type=str, 
+        help="Path to csv containing timestamp, fundamental, ringdown, and methane data")
+
     parser.add_argument('--output_file', required=True, type=str, help="Where to save resulting csv")
 
 
@@ -186,5 +208,9 @@ if __name__ == '__main__':
     args = get_args()
 
     data = get_csv_and_navest(args.data_dir)
+    methane_data = get_methane_data(args.methane_path)
+
+
+    data = pd.merge_asof(data, methane_data, left_on="unix_time", right_on="unix_time")
     data.to_csv(args.output_file, index=False)
 

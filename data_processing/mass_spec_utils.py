@@ -6,7 +6,13 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 
 
-
+def scott_time_to_unix(scott_time):
+    """The mass spec data has an uncommon timestamp that 
+    seems to be expressed in days since some unknown date. 
+    This convertes to seconds and takes off enough seconds to convert
+    to seconds from the unix epoch. This was determined from a known 
+    scott time and datetime overlap"""
+    return scott_time * 24*60*60 - 62167287600.0
 
 def get_long_data(data_dir):
     files = os.listdir(data_dir)
@@ -26,6 +32,7 @@ def get_long_data(data_dir):
 
 
     long_data['time'] = long_data['time'].astype('float64')
+    long_data['time'] = long_data.time.apply(scott_time_to_unix)
     return long_data
 
 def get_wide_data(data_dir):
@@ -46,6 +53,8 @@ def get_wide_data(data_dir):
         transposed_data.append(data)
 
     combined = pd.concat(transposed_data, ignore_index=True)
+    combined['time'] = combined.time.apply(scott_time_to_unix)
+    
     return combined
 
 
