@@ -23,6 +23,11 @@ import mass_spec_utils
 
 
 def get_frames(video_dir):
+    """get_frames takes in a directory of video files
+    to read in, and returns a map from the name of the file
+    to a tuple of the start time and end time in unix.
+    This is used to later figure out which file a given 
+    timepoint is associated with (if any)"""
 
     start_end_by_file = {}
 
@@ -62,6 +67,24 @@ def time_to_file(time, start_end_by_file, return_int=False):
 
 
 def run_server(fig, timeline, near_vent, mass_spec):
+    """run_server handles the dash server interaction.
+    It set's up the html pattern, and defines the handler functions
+    for user interaction. Finally, it calls the dash run function,
+    starting the server.
+    
+    Args:
+        fig: a figure to display related to the data. 
+            used here as a spatial element.
+
+        timeline: A time series of the data, used to select
+            points of interest to display other data
+            
+        near_vent: the underlying data of interest, 
+            used for displaying sensor readouts.
+            
+        mass_spec: wide mass spec data with each row 
+            representing a point in time, with readings for 
+            each mass."""
 
     app = Dash(__name__)
 
